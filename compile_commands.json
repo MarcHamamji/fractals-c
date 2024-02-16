@@ -1,6 +1,6 @@
 [
  {
-  "directory": "/home/marc/dev/fractales/mandelbrot-c",
+  "directory": "/home/marc/dev/fractales/fractals-c",
   "arguments": [
    "gcc",
    "-I/usr/include/gtk-4.0",
