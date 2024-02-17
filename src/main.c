@@ -1,6 +1,7 @@
 #include <cairo.h>
 #include <complex.h>
 #include <gtk/gtk.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +18,7 @@
 #define INITIAL_SCREEN_CENTER_AS_COMPLEX 0;
 
 typedef struct {
-  guchar *data;
+  guchar *pixels;
   Window *window;
 
   bool julia;
@@ -30,6 +31,8 @@ typedef struct {
 } State;
 
 State state;
+
+double complex drag_center_start;
 
 static double map(double x, double fromMin, double fromMax, double toMin,
                   double toMax) {
@@ -66,7 +69,13 @@ static int8_t diverging_threshold(double complex initial_z, double complex c,
   return -1;
 }
 
-void color_point(cairo_t *cr, int x, int y, int width, int height) {
+void set_pixel_color(guchar *pixels, int x, int y, int r, int g, int b) {
+  pixels[(y * SIZE + x) * 3] = r;
+  pixels[(y * SIZE + x) * 3 + 1] = g;
+  pixels[(y * SIZE + x) * 3 + 2] = b;
+}
+
+void color_point(int x, int y) {
   double complex complex_point = screen_to_complex(
       x + y * I, state.screen_center_as_complex, state.complex_width);
   int8_t threshold;
@@ -87,22 +96,11 @@ void color_point(cairo_t *cr, int x, int y, int width, int height) {
       color = 255;
   }
 
-  state.data[(y * width + x) * 3] = color;
-  state.data[(y * width + x) * 3 + 1] = color;
-  state.data[(y * width + x) * 3 + 2] = color;
-  if (!state.julia && 2 * cimag(state.screen_center_as_complex) - y < height &&
-      2 * cimag(state.screen_center_as_complex) - y >= 0) {
-    state.data[(int)((2 * cimag(state.screen_center_as_complex) - y) * width +
-                     x) *
-               3] = color;
-    state.data[(int)((2 * cimag(state.screen_center_as_complex) - y) * width +
-                     x) *
-                   3 +
-               1] = color;
-    state.data[(int)((2 * cimag(state.screen_center_as_complex) - y) * width +
-                     x) *
-                   3 +
-               2] = color;
+  set_pixel_color(state.pixels, x, y, color, color, color);
+
+  int mirrored_y = 2 * cimag(state.screen_center_as_complex) - y;
+  if (!state.julia && mirrored_y < state.window->size && mirrored_y >= 0) {
+    set_pixel_color(state.pixels, x, mirrored_y, color, color, color);
   }
 }
 
@@ -112,6 +110,7 @@ static void draw_axes(cairo_t *cr) {
 
   double complex screen_center =
       complex_to_screen(0, state.screen_center_as_complex, state.complex_width);
+
   cairo_move_to(cr, creal(screen_center), 0);
   cairo_line_to(cr, creal(screen_center), SIZE);
   cairo_move_to(cr, 0, cimag(screen_center));
@@ -138,45 +137,46 @@ static void draw_julia_z0(cairo_t *cr) {
 }
 
 static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
-                 int height, gpointer _data) {
+                 int height, gpointer user_data) {
 
   if (!state.julia) {
     if (cimag(state.screen_center_as_complex) > height / 2.0) {
       for (int x = 0; x < width; x++) {
-        for (int y = 0; y <= cimag(state.screen_center_as_complex); y++) {
-          color_point(cr, x, y, width, height);
+        for (int y = 0; y < cimag(state.screen_center_as_complex); y++) {
+          color_point(x, y);
         }
       }
     } else {
       for (int x = 0; x < width; x++) {
         for (int y = cimag(state.screen_center_as_complex); y < height; y++) {
-          color_point(cr, x, y, width, height);
+          color_point(x, y);
         }
       }
     }
   } else {
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
-        color_point(cr, x, y, width, height);
+        color_point(x, y);
       }
     }
   }
 
   gdk_cairo_set_source_pixbuf(
       cr,
-      gdk_pixbuf_new_from_data(state.data, GDK_COLORSPACE_RGB, FALSE, 8, width,
-                               height, width * 3, NULL, NULL),
+      gdk_pixbuf_new_from_data(state.pixels, GDK_COLORSPACE_RGB, FALSE, 8,
+                               width, height, width * 3, NULL, NULL),
       0, 0);
   cairo_paint(cr);
 
   draw_axes(cr);
+
   if (state.julia) {
     draw_julia_z0(cr);
   }
 }
 
-static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
-                               guint keycode, GdkModifierType _state) {
+static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
+                             guint keycode, GdkModifierType modifier) {
 
   GtkWidget *drawing_area = state.window->drawing_area;
 
@@ -241,11 +241,28 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
   return TRUE;
 }
 
-int main(int argc, char *argv[]) {
-  state.data = malloc(SIZE * SIZE * 3);
+void on_drag_start(GtkGestureDrag *gesture, gdouble start_x, gdouble start_y,
+                   gpointer user_data) {
+  drag_center_start = state.screen_center_as_complex;
+}
 
-  state.window =
-      window_new("Fractales", SIZE, state.data, draw, on_key_pressed);
+void on_drag_update(GtkGestureDrag *gesture, gdouble offset_x, gdouble offset_y,
+                    gpointer user_data) {
+
+  state.screen_center_as_complex = screen_to_complex(
+      complex_to_screen(drag_center_start, state.screen_center_as_complex,
+                        state.complex_width) -
+          offset_x - offset_y * I,
+      state.screen_center_as_complex, state.complex_width);
+
+  gtk_widget_queue_draw(state.window->drawing_area);
+}
+
+int main(int argc, char *argv[]) {
+  state.pixels = malloc(SIZE * SIZE * 3);
+
+  state.window = window_new("Fractales", SIZE, state.pixels, draw, on_key_press,
+                            on_drag_start, on_drag_update);
 
   state.julia = INITIAL_JULIA;
   state.julia_z0 = INITIAL_JULIA_Z0;
@@ -255,7 +272,7 @@ int main(int argc, char *argv[]) {
 
   int status = window_present(state.window);
 
-  free(state.data);
+  free(state.pixels);
 
   return status;
 }

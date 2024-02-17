@@ -7,11 +7,15 @@ typedef struct {
   Window *window;
   char *name;
   unsigned int size;
-  guchar *data;
+  guchar *pixels;
   void (*draw)(GtkDrawingArea *drawing_area, cairo_t *cr, int width, int height,
                gpointer _data);
   gboolean (*on_key_press)(GtkEventControllerKey *controller, guint keyval,
                            guint keycode, GdkModifierType state);
+  void (*on_drag_update)(GtkGestureDrag *gesture, gdouble offset_x,
+                         gdouble offset_y, gpointer _data);
+  void (*on_drag_start)(GtkGestureDrag *gesture, gdouble offset_x,
+                        gdouble offset_y, gpointer _data);
 } WindowActivationParams;
 
 static void activate(GtkApplication *app, WindowActivationParams *params) {
@@ -28,7 +32,7 @@ static void activate(GtkApplication *app, WindowActivationParams *params) {
   gtk_window_set_child(GTK_WINDOW(window->app_window), window->drawing_area);
 
   gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(window->drawing_area),
-                                 params->draw, window->data, NULL);
+                                 params->draw, window->pixels, NULL);
 
   window->event_controller = gtk_event_controller_key_new();
   g_signal_connect_object(window->event_controller, "key-pressed",
@@ -37,17 +41,30 @@ static void activate(GtkApplication *app, WindowActivationParams *params) {
 
   gtk_widget_add_controller(GTK_WIDGET(window->app_window),
                             window->event_controller);
+
+  window->drag_gesture = gtk_gesture_drag_new();
+  g_signal_connect(window->drag_gesture, "drag-update",
+                   G_CALLBACK(params->on_drag_update), window->drawing_area);
+  g_signal_connect(window->drag_gesture, "drag-begin",
+                   G_CALLBACK(params->on_drag_start), window->drawing_area);
+  gtk_widget_add_controller(GTK_WIDGET(window->drawing_area),
+                            GTK_EVENT_CONTROLLER(window->drag_gesture));
+
   gtk_window_present(GTK_WINDOW(window->app_window));
 
   free(params);
 }
 
-Window *window_new(char *name, unsigned int size, guchar *data,
-                   void (*draw)(GtkDrawingArea *drawing_area, cairo_t *cr,
-                                int width, int height, gpointer _data),
-                   gboolean (*on_key_press)(GtkEventControllerKey *controller,
-                                            guint keyval, guint keycode,
-                                            GdkModifierType state)) {
+Window *window_new(
+    char *name, unsigned int size, guchar *pixels,
+    void (*draw)(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
+                 int height, gpointer _data),
+    gboolean (*on_key_press)(GtkEventControllerKey *controller, guint keyval,
+                             guint keycode, GdkModifierType state),
+    void (*on_drag_start)(GtkGestureDrag *gesture, gdouble offset_x,
+                          gdouble offset_y, gpointer _data),
+    void (*on_drag_update)(GtkGestureDrag *gesture, gdouble offset_x,
+                           gdouble offset_y, gpointer _data)) {
 
   gtk_init();
 
@@ -56,9 +73,12 @@ Window *window_new(char *name, unsigned int size, guchar *data,
       .window = malloc(sizeof(Window)),
       .name = name,
       .size = size,
-      .data = data,
+      .pixels = pixels,
       .draw = draw,
       .on_key_press = on_key_press,
+      .on_drag_update = on_drag_update,
+      .on_drag_start = on_drag_start,
+
   };
 
   Window *window = params->window;
@@ -69,7 +89,7 @@ Window *window_new(char *name, unsigned int size, guchar *data,
                    (gpointer)params);
 
   window->size = size;
-  window->data = data;
+  window->pixels = pixels;
 
   return window;
 }

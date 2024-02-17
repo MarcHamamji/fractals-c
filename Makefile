@@ -3,7 +3,7 @@ CFLAGS = `pkg-config --cflags gtk4 cairo`
 LIBS = -lm `pkg-config --libs gtk4 cairo`
 
 BUILD_TYPE = dev
-DEBUGGING_FLAGS = -fsanitize=undefined,address -g -Og -Wall -Wextra -Wpedantic
+DEBUGGING_FLAGS = -fsanitize=undefined,address -g -Og -Wall -Wpedantic
 OPTIMIZATION_FLAGS = -o3
 
 SRC = $(shell find src -name "*.c")
