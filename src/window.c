@@ -21,18 +21,19 @@ typedef struct {
 static void activate(GtkApplication *app, WindowActivationParams *params) {
   Window *window = params->window;
 
-  window->app_window = gtk_application_window_new(app);
+  window->app_window = GTK_APPLICATION_WINDOW(gtk_application_window_new(app));
 
   gtk_window_set_title(GTK_WINDOW(window->app_window), params->name);
   gtk_window_set_default_size(GTK_WINDOW(window->app_window), params->size,
                               params->size);
   gtk_window_set_resizable(GTK_WINDOW(window->app_window), false);
 
-  window->drawing_area = gtk_drawing_area_new();
-  gtk_window_set_child(GTK_WINDOW(window->app_window), window->drawing_area);
+  window->drawing_area = GTK_DRAWING_AREA(gtk_drawing_area_new());
+  gtk_window_set_child(GTK_WINDOW(window->app_window),
+                       GTK_WIDGET(window->drawing_area));
 
-  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(window->drawing_area),
-                                 params->draw, window->pixels, NULL);
+  gtk_drawing_area_set_draw_func(window->drawing_area, params->draw,
+                                 window->pixels, NULL);
 
   window->event_controller = gtk_event_controller_key_new();
   g_signal_connect_object(window->event_controller, "key-pressed",
@@ -66,8 +67,6 @@ Window *window_new(
     void (*on_drag_update)(GtkGestureDrag *gesture, gdouble offset_x,
                            gdouble offset_y, gpointer _data)) {
 
-  gtk_init();
-
   WindowActivationParams *params = malloc(sizeof(WindowActivationParams));
   *params = (WindowActivationParams){
       .window = malloc(sizeof(Window)),
@@ -83,8 +82,7 @@ Window *window_new(
 
   Window *window = params->window;
 
-  window->app = gtk_application_new("com.github.marchamamji.fractals-c",
-                                    G_APPLICATION_DEFAULT_FLAGS);
+  window->app = gtk_application_new(NULL, G_APPLICATION_DEFAULT_FLAGS);
   g_signal_connect(window->app, "activate", G_CALLBACK(activate),
                    (gpointer)params);
 
@@ -96,10 +94,9 @@ Window *window_new(
 
 int window_present(Window *window) {
   int status = g_application_run(G_APPLICATION(window->app), 0, NULL);
-  g_object_unref(window->app);
   return status;
 }
 
-void window_destroy(Window *window) {
-  gtk_window_close(GTK_WINDOW(window->app_window));
+void window_free(Window *window) {
+  // g_object_unref(window->app);
 }

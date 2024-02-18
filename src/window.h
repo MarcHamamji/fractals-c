@@ -4,8 +4,8 @@ typedef struct {
   unsigned int size;
   guchar *pixels;
   GtkApplication *app;
-  GtkWidget *app_window;
-  GtkWidget *drawing_area;
+  GtkApplicationWindow *app_window;
+  GtkDrawingArea *drawing_area;
   GtkEventController *event_controller;
   GtkGesture *drag_gesture;
 } Window;
@@ -25,4 +25,4 @@ Window *window_new(
 
 int window_present(Window *window);
 
-void window_destroy(Window *window);
+void window_free(Window *window);
