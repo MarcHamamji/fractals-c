@@ -27,7 +27,7 @@ typedef struct {
   int max_iter;
 
   double complex_width;
-  double complex screen_center_as_complex;
+  double complex screen_center_in_complex_plane;
 } State;
 
 State state;
@@ -39,8 +39,9 @@ static double map(double x, double fromMin, double fromMax, double toMin,
   return (x - fromMin) * (toMax - toMin) / (fromMax - fromMin) + toMin;
 }
 
-static double complex complex_to_screen(double complex z, double complex center,
-                                        double width) {
+static double complex complex_plane_to_screen(double complex z,
+                                              double complex center,
+                                              double width) {
   double x = map(creal(z), creal(center) - width / 2, creal(center) + width / 2,
                  0, SIZE);
   double y = map(cimag(z), cimag(center) - width / 2, cimag(center) + width / 2,
@@ -48,8 +49,9 @@ static double complex complex_to_screen(double complex z, double complex center,
   return x + I * y;
 }
 
-static double complex screen_to_complex(double complex z, double complex center,
-                                        double width) {
+static double complex screen_to_complex_plane(double complex z,
+                                              double complex center,
+                                              double width) {
   double x = map(creal(z), 0, SIZE, creal(center) - width / 2,
                  creal(center) + width / 2);
   double y = map(cimag(z), 0, SIZE, cimag(center) + width / 2,
@@ -76,8 +78,8 @@ void set_pixel_color(guchar *pixels, int x, int y, int r, int g, int b) {
 }
 
 void color_point(int x, int y) {
-  double complex complex_point = screen_to_complex(
-      x + y * I, state.screen_center_as_complex, state.complex_width);
+  double complex complex_point = screen_to_complex_plane(
+      x + y * I, state.screen_center_in_complex_plane, state.complex_width);
   int8_t threshold;
 
   if (state.julia) {
@@ -98,7 +100,7 @@ void color_point(int x, int y) {
 
   set_pixel_color(state.pixels, x, y, color, color, color);
 
-  int mirrored_y = 2 * cimag(state.screen_center_as_complex) - y;
+  int mirrored_y = 2 * cimag(state.screen_center_in_complex_plane) - y;
   if (!state.julia && mirrored_y < state.window->size && mirrored_y >= 0) {
     set_pixel_color(state.pixels, x, mirrored_y, color, color, color);
   }
@@ -108,8 +110,8 @@ static void draw_axes(cairo_t *cr) {
   cairo_set_source_rgb(cr, 0.5, 1, 0.8);
   cairo_set_line_width(cr, 2);
 
-  double complex screen_center =
-      complex_to_screen(0, state.screen_center_as_complex, state.complex_width);
+  double complex screen_center = complex_plane_to_screen(
+      0, state.screen_center_in_complex_plane, state.complex_width);
 
   cairo_move_to(cr, creal(screen_center), 0);
   cairo_line_to(cr, creal(screen_center), SIZE);
@@ -123,8 +125,9 @@ static void draw_julia_z0(cairo_t *cr) {
   cairo_set_source_rgb(cr, 0.5, 1, 0.8);
   cairo_set_line_width(cr, 2);
 
-  double complex z0 = complex_to_screen(
-      state.julia_z0, state.screen_center_as_complex, state.complex_width);
+  double complex z0 = complex_plane_to_screen(
+      state.julia_z0, state.screen_center_in_complex_plane,
+      state.complex_width);
 
   cairo_arc(cr, creal(z0), cimag(z0), 5, 0, 2 * M_PI);
   cairo_fill(cr);
@@ -134,30 +137,39 @@ static void draw_julia_z0(cairo_t *cr) {
   char *label = g_strdup_printf("%.1f + %.1fi", creal(state.julia_z0),
                                 cimag(state.julia_z0));
   cairo_show_text(cr, label);
+  g_free(label);
 }
 
 static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
                  int height, gpointer user_data) {
 
-  if (!state.julia) {
-    if (cimag(state.screen_center_as_complex) > height / 2.0) {
-      for (int x = 0; x < width; x++) {
-        for (int y = 0; y < cimag(state.screen_center_as_complex); y++) {
-          color_point(x, y);
-        }
-      }
-    } else {
-      for (int x = 0; x < width; x++) {
-        for (int y = cimag(state.screen_center_as_complex); y < height; y++) {
-          color_point(x, y);
-        }
-      }
-    }
-  } else {
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        color_point(x, y);
-      }
+  // if (!state.julia) {
+  //   if (cimag(state.screen_center_in_complex_plane) > height / 2.0) {
+  //     for (int x = 0; x < width; x++) {
+  //       for (int y = 0; y < cimag(state.screen_center_in_complex_plane); y++)
+  //       {
+  //         color_point(x, y);
+  //       }
+  //     }
+  //   } else {
+  //     for (int x = 0; x < width; x++) {
+  //       for (int y = cimag(state.screen_center_in_complex_plane); y < height;
+  //            y++) {
+  //         color_point(x, y);
+  //       }
+  //     }
+  //   }
+  // } else {
+  //   for (int x = 0; x < width; x++) {
+  //     for (int y = 0; y < height; y++) {
+  //       color_point(x, y);
+  //     }
+  //   }
+  // }
+
+  for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++) {
+      color_point(x, y);
     }
   }
 
@@ -181,63 +193,63 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
 static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
                              guint keycode, GdkModifierType modifier) {
 
-  GtkWidget *drawing_area = state.window->drawing_area;
+  GtkDrawingArea *drawing_area = state.window->drawing_area;
 
   switch (keyval) {
   case GDK_KEY_Up:
-    state.screen_center_as_complex += 0.1 * state.complex_width * I;
-    gtk_widget_queue_draw(drawing_area);
+    state.screen_center_in_complex_plane += 0.1 * state.complex_width * I;
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_Down:
-    state.screen_center_as_complex -= 0.1 * state.complex_width * I;
-    gtk_widget_queue_draw(drawing_area);
+    state.screen_center_in_complex_plane -= 0.1 * state.complex_width * I;
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_Right:
-    state.screen_center_as_complex += 0.1 * state.complex_width;
-    gtk_widget_queue_draw(drawing_area);
+    state.screen_center_in_complex_plane += 0.1 * state.complex_width;
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_Left:
-    state.screen_center_as_complex -= 0.1 * state.complex_width;
-    gtk_widget_queue_draw(drawing_area);
+    state.screen_center_in_complex_plane -= 0.1 * state.complex_width;
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_plus:
   case GDK_KEY_equal:
     state.complex_width *= 0.9;
     state.max_iter += 2;
-    gtk_widget_queue_draw(drawing_area);
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_minus:
     state.complex_width *= 1.1;
     state.max_iter -= 2;
-    gtk_widget_queue_draw(drawing_area);
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_q:
-    window_destroy(state.window);
+    gtk_window_destroy(GTK_WINDOW(state.window->app_window));
     break;
   case GDK_KEY_j:
     state.julia = !state.julia;
-    gtk_widget_queue_draw(drawing_area);
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_h:
-    state.screen_center_as_complex = 0;
+    state.screen_center_in_complex_plane = 0;
     state.complex_width = 3;
-    gtk_widget_queue_draw(drawing_area);
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_w:
     state.julia_z0 += 0.1 * I;
-    gtk_widget_queue_draw(drawing_area);
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_s:
     state.julia_z0 -= 0.1 * I;
-    gtk_widget_queue_draw(drawing_area);
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_a:
     state.julia_z0 -= 0.1;
-    gtk_widget_queue_draw(drawing_area);
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_d:
     state.julia_z0 += 0.1;
-    gtk_widget_queue_draw(drawing_area);
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   }
 
@@ -246,19 +258,20 @@ static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
 
 void on_drag_start(GtkGestureDrag *gesture, gdouble start_x, gdouble start_y,
                    gpointer user_data) {
-  drag_center_start = state.screen_center_as_complex;
+  drag_center_start = state.screen_center_in_complex_plane;
 }
 
 void on_drag_update(GtkGestureDrag *gesture, gdouble offset_x, gdouble offset_y,
                     gpointer user_data) {
 
-  state.screen_center_as_complex = screen_to_complex(
-      complex_to_screen(drag_center_start, state.screen_center_as_complex,
-                        state.complex_width) -
+  state.screen_center_in_complex_plane = screen_to_complex_plane(
+      complex_plane_to_screen(drag_center_start,
+                              state.screen_center_in_complex_plane,
+                              state.complex_width) -
           offset_x - offset_y * I,
-      state.screen_center_as_complex, state.complex_width);
+      state.screen_center_in_complex_plane, state.complex_width);
 
-  gtk_widget_queue_draw(state.window->drawing_area);
+  gtk_widget_queue_draw(GTK_WIDGET(state.window->drawing_area));
 }
 
 int main(int argc, char *argv[]) {
@@ -271,11 +284,13 @@ int main(int argc, char *argv[]) {
   state.julia_z0 = INITIAL_JULIA_Z0;
   state.max_iter = INITIAL_MAX_ITER;
   state.complex_width = INITIAL_COMPLEX_WIDTH;
-  state.screen_center_as_complex = INITIAL_SCREEN_CENTER_AS_COMPLEX;
+  state.screen_center_in_complex_plane = INITIAL_SCREEN_CENTER_AS_COMPLEX;
 
   int status = window_present(state.window);
 
-  free(state.pixels);
+  window_free(state.window);
+
+  g_free(state.pixels);
 
   return status;
 }
