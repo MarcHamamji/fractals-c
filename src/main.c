@@ -161,11 +161,14 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
     }
   }
 
-  gdk_cairo_set_source_pixbuf(
-      cr,
+  GdkPixbuf *pixbuf =
       gdk_pixbuf_new_from_data(state.pixels, GDK_COLORSPACE_RGB, FALSE, 8,
-                               width, height, width * 3, NULL, NULL),
-      0, 0);
+                               width, height, width * 3, NULL, NULL);
+
+  gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
+
+  g_object_unref(pixbuf);
+
   cairo_paint(cr);
 
   draw_axes(cr);
