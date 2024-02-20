@@ -255,6 +255,9 @@ void on_drag_start(GtkGestureDrag *gesture, gdouble start_x, gdouble start_y,
 void on_drag_update(GtkGestureDrag *gesture, gdouble offset_x, gdouble offset_y,
                     gpointer user_data) {
 
+  if (!state.julia)
+    return;
+
   state.julia_z0 = pixel_add_value(&initial_julia_z0, offset_x + offset_y * I,
                                    COORDINATES_TYPE_SCREEN);
 
