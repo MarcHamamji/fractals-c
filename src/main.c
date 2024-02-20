@@ -11,6 +11,7 @@
 #include "window.h"
 
 #define SIZE 800
+#define OVERLAYS_COLOR {0.92, 0.73, 0.00}
 
 #define INITIAL_JULIA false
 #define INITIAL_JULIA_Z0 0 + 0.5 * I
@@ -238,6 +239,11 @@ int main(int argc, char *argv[]) {
   state.complex_width = INITIAL_COMPLEX_WIDTH;
   state.screen_center = pixel_new_from_complex_plane_coordinates(
       &state, INITIAL_SCREEN_CENTER_AS_COMPLEX);
+
+  const float overlays_color[3] = OVERLAYS_COLOR;
+  state.overlays_color[0] = overlays_color[0];
+  state.overlays_color[1] = overlays_color[1];
+  state.overlays_color[2] = overlays_color[2];
 
   int status = window_present(state.window);
 

@@ -1,7 +1,12 @@
 #include "overlays.h"
 
+static void set_overlay_colors(cairo_t *cr, State *state) {
+  cairo_set_source_rgb(cr, state->overlays_color[0], state->overlays_color[1],
+                       state->overlays_color[2]);
+}
+
 void draw_axes(cairo_t *cr, State *state) {
-  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
+  set_overlay_colors(cr, state);
   cairo_set_line_width(cr, 2);
 
   Pixel origin = pixel_new_from_complex_plane_coordinates(state, 0);
@@ -14,7 +19,6 @@ void draw_axes(cairo_t *cr, State *state) {
 
   cairo_stroke(cr);
 
-  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
   cairo_set_font_size(cr, 16);
 
   cairo_move_to(cr, creal(screen_origin) + 10, cimag(screen_origin) + 20);
@@ -28,7 +32,7 @@ void draw_axes(cairo_t *cr, State *state) {
 }
 
 void draw_julia_z0(cairo_t *cr, State *state) {
-  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
+  set_overlay_colors(cr, state);
   cairo_set_line_width(cr, 2);
 
   double complex z0 = pixel_get_screen_coordinates(&state->julia_z0);
@@ -46,7 +50,7 @@ void draw_julia_z0(cairo_t *cr, State *state) {
 }
 
 void draw_labels(cairo_t *cr, State *state) {
-  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
+  set_overlay_colors(cr, state);
   cairo_set_font_size(cr, 16);
 
   if (state->julia) {
@@ -65,7 +69,7 @@ void draw_labels(cairo_t *cr, State *state) {
     cairo_show_text(cr, "c = variable");
 
     cairo_move_to(cr, 10, 40);
-    cairo_show_text(cr, "z0 = 0");
+    cairo_show_text(cr, "z0 = 0 + 0i");
   }
 
   cairo_move_to(cr, 10, 60);
