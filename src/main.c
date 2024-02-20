@@ -11,7 +11,8 @@
 #include "window.h"
 
 #define SIZE 800
-#define OVERLAYS_COLOR {0.92, 0.73, 0.00}
+#define OVERLAYS_COLOR                                                         \
+  { 0.92, 0.73, 0.00 }
 
 #define INITIAL_JULIA false
 #define INITIAL_JULIA_Z0 0 + 0.5 * I
@@ -178,6 +179,7 @@ static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
   case GDK_KEY_h:
     state.screen_center = pixel_new_from_complex_plane_coordinates(&state, 0);
     state.complex_width = 3;
+    state.max_iter = INITIAL_MAX_ITER;
     state.julia_z0 =
         pixel_new_from_complex_plane_coordinates(&state, INITIAL_JULIA_Z0);
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
