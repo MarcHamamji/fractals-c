@@ -1,3 +1,5 @@
+#pragma once
+
 #include <gtk/gtk.h>
 
 typedef struct {
@@ -19,9 +21,7 @@ Window *window_new(
     void (*on_drag_start)(GtkGestureDrag *gesture, gdouble offset_x,
                           gdouble offset_y, gpointer _data),
     void (*on_drag_update)(GtkGestureDrag *gesture, gdouble offset_x,
-                           gdouble offset_y, gpointer _data)
-
-);
+                           gdouble offset_y, gpointer _data));
 
 int window_present(Window *window);
 

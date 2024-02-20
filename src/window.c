@@ -77,7 +77,6 @@ Window *window_new(
       .on_key_press = on_key_press,
       .on_drag_update = on_drag_update,
       .on_drag_start = on_drag_start,
-
   };
 
   Window *window = params->window;
