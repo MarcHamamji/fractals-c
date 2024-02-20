@@ -149,6 +149,6 @@ char *pixel_string(Pixel *pixel, COORDINATES_TYPE type) {
 
   char *string = malloc(128 * sizeof(char));
 
-  sprintf(string, "%.2f + %.2fi", creal(coordinates), cimag(coordinates));
+  sprintf(string, "%g + %gi", creal(coordinates), cimag(coordinates));
   return string;
 }
