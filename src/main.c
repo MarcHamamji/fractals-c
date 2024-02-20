@@ -80,36 +80,40 @@ void color_point(Pixel *pixel) {
 static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
                  int height, gpointer user_data) {
 
-  // if (!state.julia) {
-  //   if (cimag(state.screen_center_in_complex_plane) > height / 2.0) {
-  //     for (int x = 0; x < width; x++) {
-  //       for (int y = 0; y < cimag(state.screen_center_in_complex_plane); y++)
-  //       {
-  //         color_point(x, y);
-  //       }
-  //     }
-  //   } else {
-  //     for (int x = 0; x < width; x++) {
-  //       for (int y = cimag(state.screen_center_in_complex_plane); y < height;
-  //            y++) {
-  //         color_point(x, y);
-  //       }
-  //     }
-  //   }
-  // } else {
-  //   for (int x = 0; x < width; x++) {
-  //     for (int y = 0; y < height; y++) {
-  //       color_point(x, y);
-  //     }
-  //   }
-  // }
+  double complex screen_center_in_complex_plane = pixel_get_complex_plane_coordinates(&state.screen_center);
 
-  for (int x = 0; x < width; x++) {
-    for (int y = 0; y < height; y++) {
-      Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
-      color_point(&pixel);
+  if (!state.julia) {
+    if (cimag(screen_center_in_complex_plane) > height / 2.0) {
+      for (int x = 0; x < width; x++) {
+        for (int y = 0; y < cimag(screen_center_in_complex_plane); y++) {
+          Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
+          color_point(&pixel);
+        }
+      }
+    } else {
+      for (int x = 0; x < width; x++) {
+        for (int y = cimag(screen_center_in_complex_plane); y < height;
+             y++) {
+          Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
+          color_point(&pixel);
+        }
+      }
+    }
+  } else {
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
+        color_point(&pixel);
+      }
     }
   }
+
+  // for (int x = 0; x < width; x++) {
+  //   for (int y = 0; y < height; y++) {
+  //     Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
+  //     color_point(&pixel);
+  //   }
+  // }
 
   GdkPixbuf *pixbuf =
       gdk_pixbuf_new_from_data(state.pixels, GDK_COLORSPACE_RGB, FALSE, 8,
