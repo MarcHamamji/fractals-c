@@ -88,6 +88,18 @@ static void draw_axes(cairo_t *cr) {
   cairo_line_to(cr, SIZE, cimag(screen_origin));
 
   cairo_stroke(cr);
+
+  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
+  cairo_set_font_size(cr, 16);
+
+  cairo_move_to(cr, creal(screen_origin) + 10, cimag(screen_origin) + 20);
+  cairo_show_text(cr, "0");
+  cairo_move_to(cr, SIZE - 30, cimag(screen_origin) + 20);
+  cairo_show_text(cr, "Re");
+  cairo_move_to(cr, creal(screen_origin) + 10, 20);
+  cairo_show_text(cr, "Im");
+  cairo_move_to(cr, creal(screen_origin) + 10, SIZE - 10);
+  cairo_show_text(cr, "0");
 }
 
 static void draw_julia_z0(cairo_t *cr) {
@@ -106,6 +118,34 @@ static void draw_julia_z0(cairo_t *cr) {
   cairo_show_text(cr, label);
 
   free(label);
+}
+
+static void draw_labels(cairo_t *cr) {
+  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
+  cairo_set_font_size(cr, 16);
+
+  if (state.julia) {
+    cairo_move_to(cr, 10, 20);
+    char *label = pixel_string(&state.julia_z0, COORDINATES_TYPE_COMPLEX_PLANE);
+    cairo_show_text(cr, "c = ");
+    cairo_move_to(cr, 36, 20);
+    cairo_show_text(cr, label);
+    cairo_move_to(cr, 10, 40);
+    cairo_show_text(cr, "z0 = variable");
+    free(label);
+  } else {
+    cairo_move_to(cr, 10, 20);
+    cairo_show_text(cr, "c = variable");
+    cairo_move_to(cr, 10, 40);
+    cairo_show_text(cr, "z0 = 0");
+  }
+
+  cairo_move_to(cr, 10, 60);
+  cairo_show_text(cr, "max iterations = ");
+  char max_iter_label[5];
+  sprintf(max_iter_label, "%d", state.max_iter);
+  cairo_move_to(cr, 136, 60);
+  cairo_show_text(cr, max_iter_label);
 }
 
 static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
@@ -153,6 +193,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
   cairo_paint(cr);
 
   draw_axes(cr);
+  draw_labels(cr);
 
   if (state.julia) {
     draw_julia_z0(cr);
