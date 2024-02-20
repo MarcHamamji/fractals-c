@@ -3,7 +3,7 @@
 #include <complex.h>
 #include <stdio.h>
 
-static double map(double x, double fromMin, double fromMax, double toMin,
+double map(double x, double fromMin, double fromMax, double toMin,
                   double toMax) {
   return (x - fromMin) * (toMax - toMin) / (fromMax - fromMin) + toMin;
 }

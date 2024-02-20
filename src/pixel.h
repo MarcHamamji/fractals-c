@@ -22,6 +22,8 @@ typedef enum {
   COORDINATES_TYPE_SCREEN = 1,
 } COORDINATES_TYPE;
 
+double map(double x, double fromMin, double fromMax, double toMin, double toMax);
+
 double complex screen_to_complex_plane_coordinates(
     double complex coordinates, double complex screen_center_in_complex_plane,
     double complex width, int size);

@@ -25,7 +25,7 @@ static void activate(GtkApplication *app, WindowActivationParams *params) {
 
   gtk_window_set_title(GTK_WINDOW(window->app_window), params->name);
   gtk_window_set_default_size(GTK_WINDOW(window->app_window), params->size,
-                              params->size);
+                              params->size + 36);
   gtk_window_set_resizable(GTK_WINDOW(window->app_window), false);
 
   window->drawing_area = GTK_DRAWING_AREA(gtk_drawing_area_new());
