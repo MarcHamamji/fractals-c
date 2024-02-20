@@ -28,7 +28,7 @@ static int8_t diverging_threshold(double complex initial_z, double complex c,
   double complex z = initial_z;
   for (int i = 0; i < max_iter; i++) {
     z = z * z + c;
-    if (cabs(z) > 2) {
+    if (creal(z) * creal(z) + cimag(z) * cimag(z) > 4) {
       return i;
     }
   }
@@ -80,7 +80,8 @@ void color_point(Pixel *pixel) {
 static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
                  int height, gpointer user_data) {
 
-  double complex screen_center_in_complex_plane = pixel_get_complex_plane_coordinates(&state.screen_center);
+  double complex screen_center_in_complex_plane =
+      pixel_get_complex_plane_coordinates(&state.screen_center);
 
   if (!state.julia) {
     if (cimag(screen_center_in_complex_plane) > height / 2.0) {
@@ -92,8 +93,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
       }
     } else {
       for (int x = 0; x < width; x++) {
-        for (int y = cimag(screen_center_in_complex_plane); y < height;
-             y++) {
+        for (int y = cimag(screen_center_in_complex_plane); y < height; y++) {
           Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
           color_point(&pixel);
         }
