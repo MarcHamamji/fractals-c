@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <omp.h>
+
 #include "overlays.h"
 #include "pixel.h"
 #include "state.h"
@@ -85,6 +87,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
 
   if (!state.julia) {
     if (cimag(screen_center_in_complex_plane) > height / 2.0) {
+      #pragma omp parallel for
       for (int x = 0; x < width; x++) {
         for (int y = 0; y < cimag(screen_center_in_complex_plane); y++) {
           Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
@@ -92,6 +95,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
         }
       }
     } else {
+      #pragma omp parallel for
       for (int x = 0; x < width; x++) {
         for (int y = cimag(screen_center_in_complex_plane); y < height; y++) {
           Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
@@ -100,6 +104,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
       }
     }
   } else {
+    #pragma omp parallel for
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
         Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
