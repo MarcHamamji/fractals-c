@@ -1,11 +1,11 @@
 #include <cairo.h>
 #include <complex.h>
 #include <gtk/gtk.h>
-#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "overlays.h"
 #include "pixel.h"
 #include "state.h"
 #include "window.h"
@@ -75,79 +75,6 @@ void color_point(Pixel *pixel) {
   }
 }
 
-static void draw_axes(cairo_t *cr) {
-  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
-  cairo_set_line_width(cr, 2);
-
-  Pixel origin = pixel_new_from_complex_plane_coordinates(&state, 0);
-  double complex screen_origin = pixel_get_screen_coordinates(&origin);
-
-  cairo_move_to(cr, creal(screen_origin), 0);
-  cairo_line_to(cr, creal(screen_origin), SIZE);
-  cairo_move_to(cr, 0, cimag(screen_origin));
-  cairo_line_to(cr, SIZE, cimag(screen_origin));
-
-  cairo_stroke(cr);
-
-  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
-  cairo_set_font_size(cr, 16);
-
-  cairo_move_to(cr, creal(screen_origin) + 10, cimag(screen_origin) + 20);
-  cairo_show_text(cr, "0");
-  cairo_move_to(cr, SIZE - 30, cimag(screen_origin) + 20);
-  cairo_show_text(cr, "Re");
-  cairo_move_to(cr, creal(screen_origin) + 10, 20);
-  cairo_show_text(cr, "Im");
-  cairo_move_to(cr, creal(screen_origin) + 10, SIZE - 10);
-  cairo_show_text(cr, "0");
-}
-
-static void draw_julia_z0(cairo_t *cr) {
-  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
-  cairo_set_line_width(cr, 2);
-
-  double complex z0 = pixel_get_screen_coordinates(&state.julia_z0);
-
-  cairo_arc(cr, creal(z0), cimag(z0), 5, 0, 2 * M_PI);
-  cairo_fill(cr);
-
-  cairo_set_font_size(cr, 16);
-  cairo_move_to(cr, creal(z0) + 10, cimag(z0) + 6);
-
-  char *label = pixel_string(&state.julia_z0, COORDINATES_TYPE_COMPLEX_PLANE);
-  cairo_show_text(cr, label);
-
-  free(label);
-}
-
-static void draw_labels(cairo_t *cr) {
-  cairo_set_source_rgb(cr, 0.5, 1, 0.8);
-  cairo_set_font_size(cr, 16);
-
-  if (state.julia) {
-    cairo_move_to(cr, 10, 20);
-    char *label = pixel_string(&state.julia_z0, COORDINATES_TYPE_COMPLEX_PLANE);
-    cairo_show_text(cr, "c = ");
-    cairo_move_to(cr, 36, 20);
-    cairo_show_text(cr, label);
-    cairo_move_to(cr, 10, 40);
-    cairo_show_text(cr, "z0 = variable");
-    free(label);
-  } else {
-    cairo_move_to(cr, 10, 20);
-    cairo_show_text(cr, "c = variable");
-    cairo_move_to(cr, 10, 40);
-    cairo_show_text(cr, "z0 = 0");
-  }
-
-  cairo_move_to(cr, 10, 60);
-  cairo_show_text(cr, "max iterations = ");
-  char max_iter_label[5];
-  sprintf(max_iter_label, "%d", state.max_iter);
-  cairo_move_to(cr, 136, 60);
-  cairo_show_text(cr, max_iter_label);
-}
-
 static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
                  int height, gpointer user_data) {
 
@@ -187,17 +114,10 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
                                width, height, width * 3, NULL, NULL);
 
   gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
-
+  cairo_paint(cr);
   g_object_unref(pixbuf);
 
-  cairo_paint(cr);
-
-  draw_axes(cr);
-  draw_labels(cr);
-
-  if (state.julia) {
-    draw_julia_z0(cr);
-  }
+  draw_overlays(cr, &state);
 }
 
 static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
