@@ -11,4 +11,6 @@ void draw_labels(cairo_t *cr, State *state);
 
 void draw_scale(cairo_t *cr, State *state);
 
+void draw_cross(cairo_t *cr, State *state);
+
 void draw_overlays(cairo_t *cr, State *state);

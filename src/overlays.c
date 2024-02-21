@@ -102,11 +102,24 @@ void draw_scale(cairo_t *cr, State *state) {
   cairo_show_text(cr, scale);
 }
 
+void draw_cross(cairo_t *cr, State *state) {
+  set_overlay_colors(cr, state);
+  cairo_set_line_width(cr, 2);
+  // draw a 10 px cross at the center of the window
+  cairo_move_to(cr, state->window->size / 2.0 - 5, state->window->size / 2.0);
+  cairo_line_to(cr, state->window->size / 2.0 + 5, state->window->size / 2.0);
+  cairo_move_to(cr, state->window->size / 2.0, state->window->size / 2.0 - 5);
+  cairo_line_to(cr, state->window->size / 2.0, state->window->size / 2.0 + 5);
+
+  cairo_stroke(cr);
+}
+
 void draw_overlays(cairo_t *cr, State *state) {
 
   draw_axes(cr, state);
   draw_labels(cr, state);
   draw_scale(cr, state);
+  draw_cross(cr, state);
 
   if (state->julia) {
     draw_julia_z0(cr, state);
