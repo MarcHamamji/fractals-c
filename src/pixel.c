@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 double map(double x, double fromMin, double fromMax, double toMin,
-                  double toMax) {
+           double toMax) {
   return (x - fromMin) * (toMax - toMin) / (fromMax - fromMin) + toMin;
 }
 

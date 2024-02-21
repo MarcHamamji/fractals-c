@@ -18,5 +18,7 @@ typedef struct State {
   double complex_width;
   Pixel screen_center;
 
+  bool show_overlays;
   float overlays_color[3];
+  double tick_step;
 } State;

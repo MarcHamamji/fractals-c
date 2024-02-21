@@ -87,7 +87,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
 
   if (!state.julia) {
     if (cimag(screen_center_in_complex_plane) > height / 2.0) {
-      #pragma omp parallel for
+#pragma omp parallel for
       for (int x = 0; x < width; x++) {
         for (int y = 0; y < cimag(screen_center_in_complex_plane); y++) {
           Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
@@ -95,7 +95,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
         }
       }
     } else {
-      #pragma omp parallel for
+#pragma omp parallel for
       for (int x = 0; x < width; x++) {
         for (int y = cimag(screen_center_in_complex_plane); y < height; y++) {
           Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
@@ -104,7 +104,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
       }
     }
   } else {
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
         Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
@@ -112,13 +112,6 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
       }
     }
   }
-
-  // for (int x = 0; x < width; x++) {
-  //   for (int y = 0; y < height; y++) {
-  //     Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
-  //     color_point(&pixel);
-  //   }
-  // }
 
   GdkPixbuf *pixbuf =
       gdk_pixbuf_new_from_data(state.pixels, GDK_COLORSPACE_RGB, FALSE, 8,
@@ -128,7 +121,8 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
   cairo_paint(cr);
   g_object_unref(pixbuf);
 
-  draw_overlays(cr, &state);
+  if (state.show_overlays)
+    draw_overlays(cr, &state);
 }
 
 static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
@@ -213,6 +207,10 @@ static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
         pixel_add_value(&state.julia_z0, +0.1, COORDINATES_TYPE_COMPLEX_PLANE);
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
+  case GDK_KEY_o:
+    state.show_overlays = !state.show_overlays;
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
+    break;
   }
 
   return TRUE;
@@ -251,10 +249,13 @@ int main(int argc, char *argv[]) {
   state.screen_center = pixel_new_from_complex_plane_coordinates(
       &state, INITIAL_SCREEN_CENTER_AS_COMPLEX);
 
+  state.show_overlays = true;
   const float overlays_color[3] = OVERLAYS_COLOR;
   state.overlays_color[0] = overlays_color[0];
   state.overlays_color[1] = overlays_color[1];
   state.overlays_color[2] = overlays_color[2];
+
+  state.tick_step = 1;
 
   int status = window_present(state.window);
 
