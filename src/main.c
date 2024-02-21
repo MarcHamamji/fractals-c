@@ -14,12 +14,12 @@
 
 #define SIZE 800
 #define OVERLAYS_COLOR                                                         \
-  { 0.92, 0.73, 0.00 }
+  { 0.82, 0.63, 0.00 }
 
 #define INITIAL_JULIA false
 #define INITIAL_JULIA_Z0 0 + 0.5 * I
 
-#define INITIAL_MAX_ITER 100
+#define INITIAL_MAX_ITER 128
 #define INITIAL_COMPLEX_WIDTH 3
 #define INITIAL_SCREEN_CENTER_AS_COMPLEX 0
 
@@ -168,13 +168,13 @@ static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
   case GDK_KEY_plus:
   case GDK_KEY_equal:
     state.complex_width *= 0.9;
-    state.max_iter += 2;
+    state.max_iter += 3;
     state.julia_z0._screen_coordinates_cached = false;
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_minus:
     state.complex_width *= 1.1;
-    state.max_iter -= 2;
+    state.max_iter -= 3;
     state.julia_z0._screen_coordinates_cached = false;
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
