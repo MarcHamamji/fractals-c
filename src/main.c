@@ -19,7 +19,7 @@
 #define INITIAL_JULIA false
 #define INITIAL_JULIA_Z0 0 + 0.5 * I
 
-#define INITIAL_MAX_ITER 512
+#define INITIAL_MAX_ITER 256
 #define INITIAL_COMPLEX_WIDTH 3
 #define INITIAL_SCREEN_CENTER_AS_COMPLEX 0
 
@@ -27,9 +27,12 @@ State state;
 
 static int8_t diverging_threshold(double complex initial_z, double complex c,
                                   int max_iter) {
-  double p = csqrt((creal(c) - 0.25) * (creal(c) - 0.25) + cimag(c) * cimag(c));
-  if (creal(c) < p - 2 * p * p + 0.25) {
-    return -1;
+  if (!state.julia) {
+    double p =
+        csqrt((creal(c) - 0.25) * (creal(c) - 0.25) + cimag(c) * cimag(c));
+    if (creal(c) < p - 2 * p * p + 0.25) {
+      return -1;
+    }
   }
 
   double complex z = initial_z;
