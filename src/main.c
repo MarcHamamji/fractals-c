@@ -27,6 +27,11 @@ State state;
 
 static int8_t diverging_threshold(double complex initial_z, double complex c,
                                   int max_iter) {
+  double p = csqrt((creal(c) - 0.25) * (creal(c) - 0.25) + cimag(c) * cimag(c));
+  if (creal(c) < p - 2 * p * p + 0.25) {
+    return -1;
+  }
+
   double complex z = initial_z;
   for (int i = 0; i < max_iter; i++) {
     z = z * z + c;
