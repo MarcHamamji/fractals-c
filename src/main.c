@@ -211,6 +211,14 @@ static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
     state.show_overlays = !state.show_overlays;
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
+  case GDK_KEY_i:
+    state.max_iter += 10;
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
+    break;
+  case GDK_KEY_I:
+    state.max_iter -= 10;
+    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
+    break;
   }
 
   return TRUE;

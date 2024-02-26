@@ -127,7 +127,7 @@ void draw_labels(cairo_t *cr, State *state) {
   cairo_show_text(cr, "graduation = ");
   char tick_step_label[16];
   sprintf(tick_step_label, "%g", state->tick_step);
-  cairo_move_to(cr, 112, 80);
+  cairo_move_to(cr, 112,80);
   cairo_show_text(cr, tick_step_label);
 }
 
