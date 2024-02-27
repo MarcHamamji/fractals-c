@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = `pkg-config --cflags gtk4 cairo` -fopenmp
+CFLAGS = -std=c2x `pkg-config --cflags gtk4 cairo` -fopenmp
 LIBS = -lm `pkg-config --libs gtk4 cairo`
 
 BUILD_TYPE = dev

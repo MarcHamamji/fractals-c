@@ -27,7 +27,7 @@ State state;
 
 static int8_t diverging_threshold(double complex initial_z, double complex c,
                                   int max_iter) {
-  if (!state.julia) {
+  if (state.fractal_type == FRACTAL_MANDELBROT) {
     double p =
         csqrt((creal(c) - 0.25) * (creal(c) - 0.25) + cimag(c) * cimag(c));
     if (creal(c) < p - 2 * p * p + 0.25) {
@@ -57,9 +57,10 @@ void color_point(Pixel *pixel) {
 
   int8_t threshold;
 
-  if (state.julia) {
+  if (state.fractal_type == FRACTAL_JULIA) {
     threshold = diverging_threshold(
-        complex_point, pixel_get_complex_plane_coordinates(&state.julia_z0),
+        complex_point,
+        pixel_get_complex_plane_coordinates(&state.fractals_config.julia.z0),
         state.max_iter);
   } else {
     threshold = diverging_threshold(0, complex_point, state.max_iter);
@@ -81,7 +82,8 @@ void color_point(Pixel *pixel) {
       2 * cimag(pixel_get_complex_plane_coordinates(&state.screen_center)) -
       cimag(screen_point);
 
-  if (!state.julia && mirrored_y < state.window->size && mirrored_y >= 0) {
+  if (state.fractal_type == FRACTAL_MANDELBROT &&
+      mirrored_y < state.window->size && mirrored_y >= 0) {
     set_pixel_color(state.pixels, creal(screen_point), mirrored_y, color, color,
                     color);
   }
@@ -93,7 +95,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
   double complex screen_center_in_complex_plane =
       pixel_get_complex_plane_coordinates(&state.screen_center);
 
-  if (!state.julia) {
+  if (state.fractal_type == FRACTAL_MANDELBROT) {
     if (cimag(screen_center_in_complex_plane) > height / 2.0) {
 #pragma omp parallel for
       for (int x = 0; x < width; x++) {
@@ -102,6 +104,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
           color_point(&pixel);
         }
       }
+
     } else {
 #pragma omp parallel for
       for (int x = 0; x < width; x++) {
@@ -111,6 +114,7 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
         }
       }
     }
+
   } else {
 #pragma omp parallel for
     for (int x = 0; x < width; x++) {
@@ -143,76 +147,82 @@ static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
     state.screen_center =
         pixel_add_value(&state.screen_center, 0.1 * state.complex_width * I,
                         COORDINATES_TYPE_COMPLEX_PLANE);
-    state.julia_z0._screen_coordinates_cached = false;
+    state.fractals_config.julia.z0._screen_coordinates_cached = false;
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_Down:
     state.screen_center =
         pixel_add_value(&state.screen_center, -0.1 * state.complex_width * I,
                         COORDINATES_TYPE_COMPLEX_PLANE);
-    state.julia_z0._screen_coordinates_cached = false;
+    state.fractals_config.julia.z0._screen_coordinates_cached = false;
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_Right:
     state.screen_center =
         pixel_add_value(&state.screen_center, 0.1 * state.complex_width,
                         COORDINATES_TYPE_COMPLEX_PLANE);
-    state.julia_z0._screen_coordinates_cached = false;
+    state.fractals_config.julia.z0._screen_coordinates_cached = false;
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_Left:
     state.screen_center =
         pixel_add_value(&state.screen_center, -0.1 * state.complex_width,
                         COORDINATES_TYPE_COMPLEX_PLANE);
-    state.julia_z0._screen_coordinates_cached = false;
+    state.fractals_config.julia.z0._screen_coordinates_cached = false;
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_plus:
   case GDK_KEY_equal:
     state.complex_width *= 0.9;
     state.max_iter += 3;
-    state.julia_z0._screen_coordinates_cached = false;
+    state.fractals_config.julia.z0._screen_coordinates_cached = false;
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_minus:
     state.complex_width *= 1.1;
     state.max_iter -= 3;
-    state.julia_z0._screen_coordinates_cached = false;
+    state.fractals_config.julia.z0._screen_coordinates_cached = false;
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_q:
     gtk_window_destroy(GTK_WINDOW(state.window->app_window));
     break;
   case GDK_KEY_j:
-    state.julia = !state.julia;
+    if (state.fractal_type == FRACTAL_JULIA) {
+      state.fractal_type = FRACTAL_MANDELBROT;
+    } else {
+      state.fractal_type = FRACTAL_JULIA;
+    }
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_h:
     state.screen_center = pixel_new_from_complex_plane_coordinates(&state, 0);
     state.complex_width = 3;
     state.max_iter = INITIAL_MAX_ITER;
-    state.julia_z0 =
+    state.fractals_config.julia.z0 =
         pixel_new_from_complex_plane_coordinates(&state, INITIAL_JULIA_Z0);
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_w:
-    state.julia_z0 = pixel_add_value(&state.julia_z0, 0.1 * I,
-                                     COORDINATES_TYPE_COMPLEX_PLANE);
+    state.fractals_config.julia.z0 =
+        pixel_add_value(&state.fractals_config.julia.z0, 0.1 * I,
+                        COORDINATES_TYPE_COMPLEX_PLANE);
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_s:
-    state.julia_z0 = pixel_add_value(&state.julia_z0, -0.1 * I,
-                                     COORDINATES_TYPE_COMPLEX_PLANE);
+    state.fractals_config.julia.z0 =
+        pixel_add_value(&state.fractals_config.julia.z0, -0.1 * I,
+                        COORDINATES_TYPE_COMPLEX_PLANE);
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_a:
-    state.julia_z0 =
-        pixel_add_value(&state.julia_z0, -0.1, COORDINATES_TYPE_COMPLEX_PLANE);
+    state.fractals_config.julia.z0 = pixel_add_value(
+        &state.fractals_config.julia.z0, -0.1, COORDINATES_TYPE_COMPLEX_PLANE);
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_d:
-    state.julia_z0 =
-        pixel_add_value(&state.julia_z0, +0.1, COORDINATES_TYPE_COMPLEX_PLANE);
+    state.fractals_config.julia.z0 = pixel_add_value(
+        &state.fractals_config.julia.z0, +0.1, COORDINATES_TYPE_COMPLEX_PLANE);
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_o:
@@ -236,42 +246,49 @@ Pixel initial_julia_z0;
 
 void on_drag_start(GtkGestureDrag *gesture, gdouble start_x, gdouble start_y,
                    gpointer user_data) {
-  initial_julia_z0 = state.julia_z0;
+  initial_julia_z0 = state.fractals_config.julia.z0;
 }
 
 void on_drag_update(GtkGestureDrag *gesture, gdouble offset_x, gdouble offset_y,
                     gpointer user_data) {
 
-  if (!state.julia)
+  if (state.fractal_type != FRACTAL_JULIA)
     return;
 
-  state.julia_z0 = pixel_add_value(&initial_julia_z0, offset_x + offset_y * I,
-                                   COORDINATES_TYPE_SCREEN);
+  state.fractals_config.julia.z0 = pixel_add_value(
+      &initial_julia_z0, offset_x + offset_y * I, COORDINATES_TYPE_SCREEN);
 
   gtk_widget_queue_draw(GTK_WIDGET(state.window->drawing_area));
 }
 
 int main(int argc, char *argv[]) {
-  state.pixels = malloc(SIZE * SIZE * 3);
 
-  state.window = window_new("Fractales", SIZE, state.pixels, draw, on_key_press,
-                            on_drag_start, on_drag_update);
+  state = (State){
+      .pixels = malloc(SIZE * SIZE * 3),
+      .window = window_new("Fractales", SIZE, state.pixels, draw, on_key_press,
+                           on_drag_start, on_drag_update),
 
-  state.julia = INITIAL_JULIA;
-  state.julia_z0 =
-      pixel_new_from_complex_plane_coordinates(&state, INITIAL_JULIA_Z0);
-  state.max_iter = INITIAL_MAX_ITER;
-  state.complex_width = INITIAL_COMPLEX_WIDTH;
-  state.screen_center = pixel_new_from_complex_plane_coordinates(
-      &state, INITIAL_SCREEN_CENTER_AS_COMPLEX);
+      .fractal_type = FRACTAL_MANDELBROT,
+      .fractals_config =
+          {
+              .mandelbrot = {},
+              .julia =
+                  {
+                      .z0 = pixel_new_from_complex_plane_coordinates(
+                          &state, INITIAL_JULIA_Z0),
+                  },
+          },
 
-  state.show_overlays = true;
-  const float overlays_color[3] = OVERLAYS_COLOR;
-  state.overlays_color[0] = overlays_color[0];
-  state.overlays_color[1] = overlays_color[1];
-  state.overlays_color[2] = overlays_color[2];
+      .max_iter = INITIAL_MAX_ITER,
 
-  state.tick_step = 1;
+      .complex_width = INITIAL_COMPLEX_WIDTH,
+      .screen_center = pixel_new_from_complex_plane_coordinates(
+          &state, INITIAL_SCREEN_CENTER_AS_COMPLEX),
+
+      .show_overlays = true,
+      .overlays_color = OVERLAYS_COLOR,
+      .tick_step = 1,
+  };
 
   int status = window_present(state.window);
 

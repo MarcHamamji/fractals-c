@@ -6,12 +6,30 @@
 #include "pixel.h"
 #include "window.h"
 
+typedef enum {
+  FRACTAL_MANDELBROT,
+  FRACTAL_JULIA,
+} FRACTAL_TYPE;
+
+typedef struct {
+  char _placeholder;
+} MandelbrotConfig;
+
+typedef struct {
+  Pixel z0;
+} JuliaConfig;
+
+typedef struct {
+  MandelbrotConfig mandelbrot;
+  JuliaConfig julia;
+} FractalsConfig;
+
 typedef struct State {
   guchar *pixels;
   Window *window;
 
-  bool julia;
-  Pixel julia_z0;
+  FRACTAL_TYPE fractal_type;
+  FractalsConfig fractals_config;
 
   int max_iter;
 

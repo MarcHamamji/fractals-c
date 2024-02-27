@@ -79,15 +79,17 @@ void draw_julia_z0(cairo_t *cr, State *state) {
   set_overlay_colors(cr, state);
   cairo_set_line_width(cr, 2);
 
-  double complex z0 = pixel_get_screen_coordinates(&state->julia_z0);
+  double complex z0 =
+      pixel_get_screen_coordinates(&state->fractals_config.julia.z0);
 
-  cairo_arc(cr, creal(z0), cimag(z0), 5, 0, 2 * M_PI);
+  cairo_arc(cr, creal(z0), cimag(z0), 5, 0, 2 * G_PI);
   cairo_fill(cr);
 
   cairo_set_font_size(cr, 16);
   cairo_move_to(cr, creal(z0) + 10, cimag(z0) + 6);
 
-  char *label = pixel_string(&state->julia_z0, COORDINATES_TYPE_COMPLEX_PLANE);
+  char *label = pixel_string(&state->fractals_config.julia.z0,
+                             COORDINATES_TYPE_COMPLEX_PLANE);
   cairo_show_text(cr, label);
 
   free(label);
@@ -97,10 +99,10 @@ void draw_labels(cairo_t *cr, State *state) {
   set_overlay_colors(cr, state);
   cairo_set_font_size(cr, 16);
 
-  if (state->julia) {
+  if (state->fractal_type == FRACTAL_JULIA) {
     cairo_move_to(cr, 10, 20);
-    char *label =
-        pixel_string(&state->julia_z0, COORDINATES_TYPE_COMPLEX_PLANE);
+    char *label = pixel_string(&state->fractals_config.julia.z0,
+                               COORDINATES_TYPE_COMPLEX_PLANE);
     cairo_show_text(cr, "c = ");
     cairo_move_to(cr, 36, 20);
     cairo_show_text(cr, label);
@@ -127,7 +129,7 @@ void draw_labels(cairo_t *cr, State *state) {
   cairo_show_text(cr, "graduation = ");
   char tick_step_label[16];
   sprintf(tick_step_label, "%g", state->tick_step);
-  cairo_move_to(cr, 112,80);
+  cairo_move_to(cr, 112, 80);
   cairo_show_text(cr, tick_step_label);
 }
 
@@ -172,7 +174,7 @@ void draw_overlays(cairo_t *cr, State *state) {
   draw_scale(cr, state);
   draw_cross(cr, state);
 
-  if (state->julia) {
+  if (state->fractal_type == FRACTAL_JULIA) {
     draw_julia_z0(cr, state);
   }
 }
