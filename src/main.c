@@ -23,7 +23,51 @@
 #define INITIAL_COMPLEX_WIDTH 3
 #define INITIAL_SCREEN_CENTER_AS_COMPLEX 0
 
+#define INITIAL_NEWTON_ROOTS 3
+#define INITIAL_NEWTON_ITERATIONS 20
+
 State state;
+
+static double complex newton_f(double complex *roots, unsigned int num_roots,
+                               double complex x) {
+  double complex result = 1;
+  for (int i = 0; i < num_roots; i++) {
+    result *= (x - roots[i]);
+  }
+  return result;
+}
+
+static double complex newton_f_prime(double complex *roots,
+                                     unsigned int num_roots, double complex x) {
+  double step = 1e-5;
+  return (newton_f(roots, num_roots, x + step) -
+          newton_f(roots, num_roots, x - step)) /
+         (2 * step);
+}
+
+static int newton_threshold(double complex z0, State *state) {
+  double complex z = z0;
+
+  for (int i = 0; i < state->fractals_config.newton.iterations; i++) {
+    z -= newton_f(state->fractals_config.newton.roots,
+                  state->fractals_config.newton.num_roots, z) /
+         newton_f_prime(state->fractals_config.newton.roots,
+                        state->fractals_config.newton.num_roots, z);
+  }
+
+  int closest_root_index = 0;
+  double closest_distance = cabs(z - state->fractals_config.newton.roots[0]);
+  for (int root_index = 1;
+       root_index < sizeof(state->fractals_config.newton.roots); root_index++) {
+    double distance = cabs(z - state->fractals_config.newton.roots[root_index]);
+    if (distance < closest_distance) {
+      closest_distance = distance;
+      closest_root_index = root_index;
+    }
+  }
+
+  return closest_root_index;
+}
 
 static int8_t diverging_threshold(double complex initial_z, double complex c,
                                   int max_iter) {
@@ -45,7 +89,8 @@ static int8_t diverging_threshold(double complex initial_z, double complex c,
   return -1;
 }
 
-void set_pixel_color(guchar *pixels, int x, int y, int r, int g, int b) {
+static void set_pixel_color_rgb(guchar *pixels, int x, int y, int r, int g,
+                                int b) {
   pixels[(y * SIZE + x) * 3] = r;
   pixels[(y * SIZE + x) * 3 + 1] = g;
   pixels[(y * SIZE + x) * 3 + 2] = b;
@@ -75,8 +120,8 @@ void color_point(Pixel *pixel) {
       color = 255;
   }
 
-  set_pixel_color(state.pixels, creal(screen_point), cimag(screen_point), color,
-                  color, color);
+  set_pixel_color_rgb(state.pixels, creal(screen_point), cimag(screen_point),
+                      color, color, color);
 
   int mirrored_y =
       2 * cimag(pixel_get_complex_plane_coordinates(&state.screen_center)) -
@@ -84,8 +129,8 @@ void color_point(Pixel *pixel) {
 
   if (state.fractal_type == FRACTAL_MANDELBROT &&
       mirrored_y < state.window->size && mirrored_y >= 0) {
-    set_pixel_color(state.pixels, creal(screen_point), mirrored_y, color, color,
-                    color);
+    set_pixel_color_rgb(state.pixels, creal(screen_point), mirrored_y, color,
+                        color, color);
   }
 }
 
@@ -115,12 +160,29 @@ static void draw(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
       }
     }
 
-  } else {
+  } else if (state.fractal_type == FRACTAL_JULIA) {
 #pragma omp parallel for
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
         Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
         color_point(&pixel);
+      }
+    }
+  } else if (state.fractal_type == FRACTAL_NEWTON) {
+#pragma omp parallel for
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        Pixel pixel = pixel_new_from_screen_coordinates(&state, x + y * I);
+        int closest_root_index = newton_threshold(
+            pixel_get_complex_plane_coordinates(&pixel), &state);
+        double complex screen_point = pixel_get_screen_coordinates(&pixel);
+
+        set_pixel_color_rgb(
+            state.pixels, creal(screen_point), cimag(screen_point),
+            closest_root_index * 255.0 / state.fractals_config.newton.num_roots,
+            closest_root_index * 255.0 / state.fractals_config.newton.num_roots,
+            closest_root_index * 255.0 /
+                state.fractals_config.newton.num_roots);
       }
     }
   }
@@ -188,10 +250,12 @@ static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
     gtk_window_destroy(GTK_WINDOW(state.window->app_window));
     break;
   case GDK_KEY_j:
-    if (state.fractal_type == FRACTAL_JULIA) {
-      state.fractal_type = FRACTAL_MANDELBROT;
-    } else {
+    if (state.fractal_type == FRACTAL_MANDELBROT) {
       state.fractal_type = FRACTAL_JULIA;
+    } else if (state.fractal_type == FRACTAL_JULIA) {
+      state.fractal_type = FRACTAL_NEWTON;
+    } else if (state.fractal_type == FRACTAL_NEWTON) {
+      state.fractal_type = FRACTAL_MANDELBROT;
     }
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
@@ -230,11 +294,19 @@ static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_i:
-    state.max_iter += 10;
+    if (state.fractal_type == FRACTAL_NEWTON) {
+      state.fractals_config.newton.iterations += 1;
+    } else {
+      state.max_iter += 10;
+    }
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   case GDK_KEY_I:
-    state.max_iter -= 10;
+    if (state.fractal_type == FRACTAL_NEWTON) {
+      state.fractals_config.newton.iterations -= 1;
+    } else {
+      state.max_iter -= 10;
+    }
     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     break;
   }
@@ -243,41 +315,78 @@ static gboolean on_key_press(GtkEventControllerKey *controller, guint keyval,
 }
 
 Pixel initial_julia_z0;
+unsigned int initial_root_index;
+Pixel initial_root_position;
 
 void on_drag_start(GtkGestureDrag *gesture, gdouble start_x, gdouble start_y,
                    gpointer user_data) {
-  initial_julia_z0 = state.fractals_config.julia.z0;
+  if (state.fractal_type == FRACTAL_JULIA) {
+    initial_julia_z0 = state.fractals_config.julia.z0;
+  } else if (state.fractal_type == FRACTAL_NEWTON) {
+    Pixel mouse_position =
+        pixel_new_from_screen_coordinates(&state, start_x + start_y * I);
+    double complex mouse_position_complex =
+        pixel_get_complex_plane_coordinates(&mouse_position);
+    double min_distance = INFINITY;
+    unsigned int min_index = 0;
+    for (unsigned int i = 0; i < state.fractals_config.newton.num_roots; i++) {
+      double distance =
+          cabs(mouse_position_complex - state.fractals_config.newton.roots[i]);
+      if (distance < min_distance) {
+        min_distance = distance;
+        min_index = i;
+      }
+    }
+
+    initial_root_index = min_index;
+    initial_root_position = pixel_new_from_complex_plane_coordinates(
+        &state, state.fractals_config.newton.roots[initial_root_index]);
+  }
 }
 
 void on_drag_update(GtkGestureDrag *gesture, gdouble offset_x, gdouble offset_y,
                     gpointer user_data) {
 
-  if (state.fractal_type != FRACTAL_JULIA)
-    return;
+  if (state.fractal_type == FRACTAL_JULIA) {
+    Pixel new_mouse_position = pixel_add_value(
+        &initial_julia_z0, offset_x + offset_y * I, COORDINATES_TYPE_SCREEN);
 
-  state.fractals_config.julia.z0 = pixel_add_value(
-      &initial_julia_z0, offset_x + offset_y * I, COORDINATES_TYPE_SCREEN);
+    state.fractals_config.julia.z0 = new_mouse_position;
+    gtk_widget_queue_draw(GTK_WIDGET(state.window->drawing_area));
+  } else if (state.fractal_type == FRACTAL_NEWTON) {
+    Pixel new_mouse_position =
+        pixel_add_value(&initial_root_position, offset_x + offset_y * I,
+                        COORDINATES_TYPE_SCREEN);
 
-  gtk_widget_queue_draw(GTK_WIDGET(state.window->drawing_area));
+    state.fractals_config.newton.roots[initial_root_index] =
+        pixel_get_complex_plane_coordinates(&new_mouse_position);
+    gtk_widget_queue_draw(GTK_WIDGET(state.window->drawing_area));
+  }
 }
 
 int main(int argc, char *argv[]) {
+
+  double complex *roots = malloc(INITIAL_NEWTON_ROOTS * sizeof(double complex));
+  for (int i = 0; i < INITIAL_NEWTON_ROOTS; i++) {
+    roots[i] = cexp(2 * G_PI * I * i / INITIAL_NEWTON_ROOTS);
+  }
 
   state = (State){
       .pixels = malloc(SIZE * SIZE * 3),
       .window = window_new("Fractales", SIZE, state.pixels, draw, on_key_press,
                            on_drag_start, on_drag_update),
 
-      .fractal_type = FRACTAL_MANDELBROT,
-      .fractals_config =
-          {
-              .mandelbrot = {},
-              .julia =
-                  {
-                      .z0 = pixel_new_from_complex_plane_coordinates(
-                          &state, INITIAL_JULIA_Z0),
-                  },
-          },
+      .fractal_type = FRACTAL_NEWTON,
+      .fractals_config = {.mandelbrot = {},
+                          .julia =
+                              {
+                                  .z0 =
+                                      pixel_new_from_complex_plane_coordinates(
+                                          &state, INITIAL_JULIA_Z0),
+                              },
+                          .newton = {.roots = roots,
+                                     .num_roots = INITIAL_NEWTON_ROOTS,
+                                     .iterations = INITIAL_NEWTON_ITERATIONS}},
 
       .max_iter = INITIAL_MAX_ITER,
 
@@ -295,6 +404,7 @@ int main(int argc, char *argv[]) {
   window_free(state.window);
 
   g_free(state.pixels);
+  g_free(roots);
 
   return status;
 }

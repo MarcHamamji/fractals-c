@@ -9,6 +9,7 @@
 typedef enum {
   FRACTAL_MANDELBROT,
   FRACTAL_JULIA,
+  FRACTAL_NEWTON,
 } FRACTAL_TYPE;
 
 typedef struct {
@@ -20,8 +21,15 @@ typedef struct {
 } JuliaConfig;
 
 typedef struct {
+  double complex *roots;
+  unsigned int num_roots;
+  unsigned int iterations;
+} NewtonConfig;
+
+typedef struct {
   MandelbrotConfig mandelbrot;
   JuliaConfig julia;
+  NewtonConfig newton;
 } FractalsConfig;
 
 typedef struct State {
