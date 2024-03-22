@@ -127,12 +127,12 @@ void draw_labels(cairo_t *cr, State *state) {
     cairo_show_text(cr, iterations);
 
     cairo_move_to(cr, 10, 40);
-    cairo_show_text(cr, "racines =");
+    cairo_show_text(cr, "roots =");
     for (int i = 0; i < state->fractals_config.newton.num_roots; i++) {
       Pixel pixel = pixel_new_from_complex_plane_coordinates(
           state, state->fractals_config.newton.roots[i]);
       char *label = pixel_string(&pixel, COORDINATES_TYPE_COMPLEX_PLANE);
-      cairo_move_to(cr, 82, 40 + 20 * i);
+      cairo_move_to(cr, 68, 40 + 20 * i);
       cairo_show_text(cr, label);
       free(label);
     }

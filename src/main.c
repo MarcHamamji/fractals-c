@@ -31,7 +31,7 @@ State state;
 static double complex newton_f(double complex *roots, unsigned int num_roots,
                                double complex x) {
   double complex result = 1;
-  for (int i = 0; i < num_roots; i++) {
+  for (unsigned int i = 0; i < num_roots; i++) {
     result *= (x - roots[i]);
   }
   return result;
@@ -39,7 +39,7 @@ static double complex newton_f(double complex *roots, unsigned int num_roots,
 
 static double complex newton_f_prime(double complex *roots,
                                      unsigned int num_roots, double complex x) {
-  double step = 1e-5;
+  double step = 1e-4;
   return (newton_f(roots, num_roots, x + step) -
           newton_f(roots, num_roots, x - step)) /
          (2 * step);
@@ -373,7 +373,7 @@ int main(int argc, char *argv[]) {
 
   state = (State){
       .pixels = malloc(SIZE * SIZE * 3),
-      .window = window_new("Fractales", SIZE, state.pixels, draw, on_key_press,
+      .window = window_new("Fractals", SIZE, state.pixels, draw, on_key_press,
                            on_drag_start, on_drag_update),
 
       .fractal_type = FRACTAL_NEWTON,
