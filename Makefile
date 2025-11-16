@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -std=c2x `pkg-config --cflags gtk4 cairo` -fopenmp
 LIBS = -lm `pkg-config --libs gtk4 cairo`
 
-BUILD_TYPE = dev
+BUILD_TYPE ?= dev
 DEBUGGING_FLAGS = -fsanitize=undefined,address -g3 -Og -Wall -Wpedantic
 OPTIMIZATION_FLAGS = -O3
 
