@@ -366,9 +366,9 @@ void on_drag_update(GtkGestureDrag *gesture, gdouble offset_x, gdouble offset_y,
 
 int main(int argc, char *argv[]) {
 
-  double complex *roots = malloc(INITIAL_NEWTON_ROOTS * sizeof(double complex));
+  double complex *newton_roots = malloc(INITIAL_NEWTON_ROOTS * sizeof(double complex));
   for (int i = 0; i < INITIAL_NEWTON_ROOTS; i++) {
-    roots[i] = cexp(2 * G_PI * I * i / INITIAL_NEWTON_ROOTS);
+    newton_roots[i] = cexp(2 * G_PI * I * i / INITIAL_NEWTON_ROOTS);
   }
 
   state = (State){
@@ -384,7 +384,7 @@ int main(int argc, char *argv[]) {
                                       pixel_new_from_complex_plane_coordinates(
                                           &state, INITIAL_JULIA_Z0),
                               },
-                          .newton = {.roots = roots,
+                          .newton = {.roots = newton_roots,
                                      .num_roots = INITIAL_NEWTON_ROOTS,
                                      .iterations = INITIAL_NEWTON_ITERATIONS}},
 
@@ -404,7 +404,7 @@ int main(int argc, char *argv[]) {
   window_free(state.window);
 
   g_free(state.pixels);
-  g_free(roots);
+  g_free(newton_roots);
 
   return status;
 }
