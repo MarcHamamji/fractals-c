@@ -88,11 +88,10 @@ void draw_julia_z0(cairo_t *cr, State *state) {
   cairo_set_font_size(cr, 16);
   cairo_move_to(cr, creal(z0) + 10, cimag(z0) + 6);
 
-  char *label = pixel_string(&state->fractals_config.julia.z0,
-                             COORDINATES_TYPE_COMPLEX_PLANE);
+  char label[128];
+  pixel_string(&state->fractals_config.julia.z0, COORDINATES_TYPE_COMPLEX_PLANE,
+               label);
   cairo_show_text(cr, label);
-
-  free(label);
 }
 
 void draw_newton_roots(cairo_t *cr, State *state) {
@@ -131,24 +130,24 @@ void draw_labels(cairo_t *cr, State *state) {
     for (int i = 0; i < state->fractals_config.newton.num_roots; i++) {
       Pixel pixel = pixel_new_from_complex_plane_coordinates(
           state, state->fractals_config.newton.roots[i]);
-      char *label = pixel_string(&pixel, COORDINATES_TYPE_COMPLEX_PLANE);
+      char label[128];
+      pixel_string(&pixel, COORDINATES_TYPE_COMPLEX_PLANE, label);
       cairo_move_to(cr, 68, 40 + 20 * i);
       cairo_show_text(cr, label);
-      free(label);
     }
 
   } else {
     if (state->fractal_type == FRACTAL_JULIA) {
       cairo_move_to(cr, 10, 20);
-      char *label = pixel_string(&state->fractals_config.julia.z0,
-                                 COORDINATES_TYPE_COMPLEX_PLANE);
+      char label[128];
+      pixel_string(&state->fractals_config.julia.z0,
+                   COORDINATES_TYPE_COMPLEX_PLANE, label);
       cairo_show_text(cr, "c = ");
       cairo_move_to(cr, 36, 20);
       cairo_show_text(cr, label);
 
       cairo_move_to(cr, 10, 40);
       cairo_show_text(cr, "z0 = variable");
-      free(label);
     } else {
       cairo_move_to(cr, 10, 20);
       cairo_show_text(cr, "c = variable");

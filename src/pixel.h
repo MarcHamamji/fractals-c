@@ -48,4 +48,4 @@ Pixel pixel_add(Pixel *pixel1, Pixel *pixel2);
 Pixel pixel_add_value(Pixel *pixel, double complex value,
                       COORDINATES_TYPE type);
 
-char *pixel_string(Pixel *pixel, COORDINATES_TYPE type);
+void pixel_string(Pixel *pixel, COORDINATES_TYPE type, char *output);

@@ -133,7 +133,7 @@ Pixel pixel_add_value(Pixel *pixel, double complex value,
   return pixel_new_from_complex_plane_coordinates(pixel->_state, 0);
 }
 
-char *pixel_string(Pixel *pixel, COORDINATES_TYPE type) {
+void pixel_string(Pixel *pixel, COORDINATES_TYPE type, char *output) {
   double complex coordinates;
 
   switch (type) {
@@ -147,8 +147,5 @@ char *pixel_string(Pixel *pixel, COORDINATES_TYPE type) {
     coordinates = 0;
   }
 
-  char *string = malloc(128 * sizeof(char));
-
-  sprintf(string, "%g + %gi", creal(coordinates), cimag(coordinates));
-  return string;
+  sprintf(output, "%g + %gi", creal(coordinates), cimag(coordinates));
 }
