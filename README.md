@@ -54,3 +54,6 @@ To get proper autocompletion for `clangd`, you need to generate a `compile_comma
 ```
 bear -- make clean all
 ```
+## License
+
+This project is licensed under the [GPL-3.0 License](./LICENSE)
