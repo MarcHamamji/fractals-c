@@ -51,9 +51,15 @@ make run # Run the compiled main.out
 ## Development
 
 To get proper autocompletion for `clangd`, you need to generate a `compile_commands.json` file. This can be done using the `bear` tool.
-```
+```sh
 bear -- make clean all
 ```
+
+To format all the code, use `clang-format`.
+```sh
+clang-format -i ./**/*.{c,h}
+```
+
 ## License
 
 This project is licensed under the [GPL-3.0 License](./LICENSE)
