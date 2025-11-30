@@ -152,7 +152,7 @@ static void draw(GtkDrawingArea* drawing_area,
                  cairo_t* cr,
                  int width,
                  int height,
-                 gpointer user_data) {
+                 gpointer _user_data) {
     double complex screen_center_in_complex_plane =
         pixel_get_complex_plane_coordinates(&state.screen_center);
 
@@ -212,6 +212,8 @@ static void draw(GtkDrawingArea* drawing_area,
             }
         }
     }
+
+    // GdkTexture* texture = gdk_memory_texture_new(width, height, GDK_MEMORY_G8, state.pixels, width);
 
     GdkPixbuf* pixbuf = gdk_pixbuf_new_from_data(state.pixels,
                                                  GDK_COLORSPACE_RGB,
@@ -366,7 +368,7 @@ Pixel initial_root_position;
 void on_drag_start(GtkGestureDrag* gesture,
                    gdouble start_x,
                    gdouble start_y,
-                   gpointer user_data) {
+                   gpointer _user_data) {
     if (state.fractal_type == FRACTAL_JULIA) {
         initial_julia_z0 = state.fractals_config.julia.z0;
     } else if (state.fractal_type == FRACTAL_NEWTON) {
@@ -395,7 +397,7 @@ void on_drag_start(GtkGestureDrag* gesture,
 void on_drag_update(GtkGestureDrag* gesture,
                     gdouble offset_x,
                     gdouble offset_y,
-                    gpointer user_data) {
+                    gpointer _user_data) {
     if (state.fractal_type == FRACTAL_JULIA) {
         Pixel new_mouse_position = pixel_add_value(&initial_julia_z0,
                                                    offset_x + offset_y * I,

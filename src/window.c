@@ -39,11 +39,11 @@ static void activate(GtkApplication* app, WindowActivationParams* params) {
     gtk_window_set_resizable(GTK_WINDOW(window->app_window), false);
 
     window->drawing_area = GTK_DRAWING_AREA(gtk_drawing_area_new());
+    gtk_drawing_area_set_draw_func(
+        window->drawing_area, params->draw, NULL, NULL);
+
     gtk_window_set_child(GTK_WINDOW(window->app_window),
                          GTK_WIDGET(window->drawing_area));
-
-    gtk_drawing_area_set_draw_func(
-        window->drawing_area, params->draw, window->pixels, NULL);
 
     window->event_controller = gtk_event_controller_key_new();
     g_signal_connect_object(window->event_controller,
