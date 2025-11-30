@@ -1,4 +1,7 @@
-# A GTK fractals explorer in C
+# Lightweight GTK Fractal Explorer
+
+Explore and visualize Mandelbrot, Julia, and Newton fractals with a lightweight GTK application written in C.
+
 
 ## Setup
 
