@@ -213,7 +213,8 @@ static void draw(GtkDrawingArea* drawing_area,
         }
     }
 
-    // GdkTexture* texture = gdk_memory_texture_new(width, height, GDK_MEMORY_G8, state.pixels, width);
+    // GdkTexture* texture = gdk_memory_texture_new(width, height,
+    // GDK_MEMORY_G8, state.pixels, width);
 
     GdkPixbuf* pixbuf = gdk_pixbuf_new_from_data(state.pixels,
                                                  GDK_COLORSPACE_RGB,
