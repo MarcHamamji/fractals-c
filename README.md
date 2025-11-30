@@ -10,7 +10,9 @@ Explore and visualize Mandelbrot, Julia, and Newton fractals with a lightweight 
 ## Usage
 
 ```sh
-make # Compile the code
+BUILD_TYPE=release make # Compile the code in release mode (default)
+BUILD_TYPE=dev make # Compile the code in development mode (includes address sanitizer and debug symbols)
+
 make run # Run the compiled main.out
 ```
 
