@@ -2,6 +2,16 @@
 
 Explore and visualize Mandelbrot, Julia, and Newton fractals with a lightweight GTK application written in C.
 
+## Demo
+
+### Mandelbrot Fractal
+![](./images/mandelbrot.png)
+
+### Julia Fractal
+![](./images/julia.png)
+
+### Newton Fractal
+![](./images/newton.png)
 
 ## Setup
 
