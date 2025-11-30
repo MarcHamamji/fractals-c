@@ -6,7 +6,7 @@ CFLAGS = -std=c2x $(PKG_CFLAGS) -fopenmp
 LDFLAGS =
 LIBS = -lm $(PKG_LIBS) -lgomp
 
-BUILD_TYPE ?= dev
+BUILD_TYPE ?= release
 DEBUGGING_FLAGS = -fsanitize=undefined,address -g3 -Og -Wall -Wpedantic
 OPTIMIZATION_FLAGS = -O3
 
